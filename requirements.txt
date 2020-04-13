@@ -1,0 +1,12 @@
+https://github.com/Celestial-intelligence/wrapt_timeout_decorator/archive/master.zip
+python-geoip-python3
+python-geoip-geolite2
+python-telegram-bot
+opencv-python
+countrycode
+ipaddress
+colorama
+requests
+pyfiglet
+pillow
+pytz

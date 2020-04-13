@@ -1,0 +1,9 @@
+admin:admin
+admin:123456
+666666:666666
+666666:888888
+888888:888888
+default:tluafed
+111111:111111
+admin:admin123
+user:user
