@@ -124,7 +124,7 @@ class Poster(object):
 					self.sent = self.bot.send_photo(chat_id=self.room_id, photo=f, caption=self.text, parse_mode=telegram.ParseMode.MARKDOWN, timeout=120)
 				logging.info("Sent.")
 			except Exception as e:
-				if retry_c > 4
+				if retry_c > 4:
 					break
 				elif str(e) == 'Timed out':
 					logging.info("Cannot send post: {}. Sleeping for 5 seconds and trying again...".format(str(e)))
