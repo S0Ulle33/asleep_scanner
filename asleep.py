@@ -262,8 +262,8 @@ def main():
     ROOM_ID = '-1001184010916' # Channel ID
     TOKEN = "" # Bot Token
     SNAPSHOT_DIR = os.path.join(Path.cwd(), config.snapshots_folder)
-    poster = Poster(SNAPSHOT_DIR, TOKEN, ROOM_ID, delete=False) 
     """ delete=True removes snapshots after posting """
+    #poster = Poster(SNAPSHOT_DIR, TOKEN, ROOM_ID, delete=False) 
     #poster.start()  ### Start posting function
 
     if os.path.exists(config.snapshots_folder):
