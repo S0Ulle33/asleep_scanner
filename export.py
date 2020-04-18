@@ -58,3 +58,18 @@ def save_csv(results):
                 config.top_logopass[logopass] = 1
             else:
                 config.top_logopass[logopass] += 1
+
+
+def dead_cams(hosts):
+    res_cams = []
+    raw_cams =[]
+    for ip in config.working_hosts:
+       res_cams.append(ip[0])
+    for host in hosts:
+       raw_cams.append(host[0])
+    dead_c = [[x for x in raw_cams if x not in res_cams], [x for x in res_cams if x not in raw_cams]]
+
+    with open('dead_cams.txt', 'w') as dead:
+        for lst in dead_c:
+           for cam in lst:
+              dead.write(str(cam) + "\n")

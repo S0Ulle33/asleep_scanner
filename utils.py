@@ -7,14 +7,18 @@ import config
 from shutil import rmtree
 
 def masscan_parse(brute_file):
-    with open(brute_file, 'r') as file:
+    with open(brute_file, 'r+') as file:
         hosts = []
-        for line in file: #.readlines():
+        for line in file.readlines():
             new_ips = re.findall(r'[0-9]+(?:\.[0-9]+){3}', line)
             port_re = re.search(r'tcp (\d+)', line)
             port = '37777' if not port_re else port_re.group(1)
             for ip in new_ips:
                 hosts.append([ip, port])
+#        file.seek(0)
+#        for hst in hosts:
+#            file.write(hst[0] + ":" + hst[1] + "\n")
+#        file.truncate()
     return hosts
 
 

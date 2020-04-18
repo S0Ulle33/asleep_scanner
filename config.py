@@ -7,12 +7,12 @@ passwords = []
 logopasses = []
 top_logopass = {}
 working_hosts = []
-blocked_hosts = []
 random_countries = []
 snapshots_counts = 0
 custom_brute_file = False
 snapshots_enabled = True
 trash_cam = {}
+ch_count = 0
 max_ips = 0
 index = 0
 total = 0
@@ -55,9 +55,9 @@ def additional_masscan_params():
 # SPECIFY HERE SPEED/QUALITY OF SCAN AND BRUTE
 default_masscan_threads = 3000
 #default_check_threads = 120
-default_brute_threads = 140
-default_snap_threads = 20
-default_image_threads = 6
+default_brute_threads = 160
+default_snap_threads = 140
+default_image_threads = 60
 
 # SPECIFY HERE CAMERAS COUNT IN SMARTPSS XML
 max_xml_entries = 255 # 16 optimum

@@ -38,7 +38,7 @@ class ScreenshotThread(threading.Thread):
         config.trash_cam[dahua.ip] = 0
         dead_counter = 0
         capturing = 0
-        total_channels = len(config.working_hosts) * 16
+        total_channels = config.ch_count
         for channel in range(channels_count):
             # Ускорение / Performance
             if dead_counter > 4 or config.trash_cam[dahua.ip] > 2:
@@ -50,9 +50,10 @@ class ScreenshotThread(threading.Thread):
                 capturing += 1
                 name =  f"{dahua.ip}_{dahua.port}_{dahua.login}_{dahua.password}_{channel + 1}_{model}.jpg"
                 grabster = channels_count - capturing
-                print(fore_green(f"Brute progress: [{config.state}] Grabbing snapshots for {dahua.ip}.. Left {str(grabster)} channels.. Trash: {str(config.trash_cam[dahua.ip])}\n") + back_yellow(f"Writing snapshots.. Total saved {config.snapshots_counts} from {total_channels}"), end='\r')
+                print(fore_green(f"Brute progress: [{config.state}] Grabbing snapshots for {dahua.ip}.. \n") #Left {str(grabster)} channels.. Trash: {str(config.trash_cam[dahua.ip])}\n")
+                + back_yellow(f"Writing snapshots.. Total saved {config.snapshots_counts} from {total_channels}"), end='\r')
                 sleep(0.05)
-                self.image_processing_queue.put([name, jpeg])
+                self.image_processing_queue.put([name, jpeg], block=False, timeout=20)
                 # self.image_processing(jpeg)
             except Exception as e:
                 logging.debug(f' Channel {channel + 1} of {dahua.ip} is dead {str(e)}{" "*40}')
@@ -72,7 +73,6 @@ class ImageProcessingThread(threading.Thread):
                 # print(self.image_processing_queue.get())
                 name, image = self.image_processing_queue.get()
             self.processing(name, image)
-            image = None
             self.image_processing_queue.task_done()
 
     def is_dark(self, image):
@@ -107,7 +107,7 @@ class ImageProcessingThread(threading.Thread):
                 return True
         except Exception as e:
              config.trash_cam[n_ip] += 1
-             print("PIL Issue: " + str(e))
+             #print("PIL Issue: " + str(e))
              logging.debug(f'{fore_red("Cannot save screenshot")} - {name.split("_")[0]} - {back_red("CORRUPTED FILE")}{" "*40}')
              pass
 
@@ -121,5 +121,5 @@ class ImageProcessingThread(threading.Thread):
             logging.debug(f' {fore_green(f"Saved snapshot - {name}")}{" "*40}')
         except Exception as e:
             config.trash_cam[n_ip] += 1
-            print(" Outfile: " + e)
+            #print(" Outfile: " + e)
             logging.debug(f'{fore_red("Cannot save screenshot")} - {name}{" "*40}')

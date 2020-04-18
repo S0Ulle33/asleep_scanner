@@ -80,7 +80,7 @@ def process_cameras():
 
 
         for host in hosts:
-            brute_queue.put(host)
+            brute_queue.put(host, block=False, timeout=25)
         print('\nStarting to brute total ' + str(brute_queue.qsize()) + ' devices\n')
 
         # check_worker.join()
@@ -89,6 +89,8 @@ def process_cameras():
         #progress.brute_bar.close()
         screenshot_queue.join()
         #progress.screenshot_bar.close()
+        image_processing_queue.join()
+        # raise exception here
         print('\n')
 
     except Exception as e:
@@ -136,6 +138,8 @@ def get_options():
                       help='Do not make SMART PSS xml files')
     parser.add_option('-t', dest='threads', default=str(config.default_masscan_threads), type='string',
                       help='Threads number for Masscan. Default %s' % config.default_masscan_threads)
+    parser.add_option('--dead', dest='dead_cams', action='store_true', default=False,
+                      help='Write not bruted cams to file')
     parser.add_option('-d', dest='debug', action='store_true', default=False, help='Debug output')
     parser.add_option('--country', dest='country', action='store_true', default=False, help='Scan by country')
     parser.add_option('--random-country', dest='random_country', action='store_true', default=False,
@@ -250,19 +254,26 @@ def main():
     if not options.no_xml and results:
         save_xml(results)
     save_csv(results)
+    if options.dead_cams:
+        hosts = masscan_parse(config.tmp_masscan_file)
+        dead_cams(hosts)
 
-    # Настройки бота для постинга:
-    ROOM_ID = '-1001184010916'
-    TOKEN = ""
+    # Configs for Telegram Bot:
+    ROOM_ID = '-1001184010916' # Channel ID
+    TOKEN = "" # Bot Token
     SNAPSHOT_DIR = os.path.join(Path.cwd(), config.snapshots_folder)
-#    poster = Poster(SNAPSHOT_DIR, TOKEN, ROOM_ID, delete=False)
-#    poster.start()
+    poster = Poster(SNAPSHOT_DIR, TOKEN, ROOM_ID, delete=False) 
+    """ delete=True removes snapshots after posting """
+    #poster.start()  ### Start posting function
 
-    # Переименуем папку со скринами, вместо того чтобы их удалять
     if os.path.exists(config.snapshots_folder):
-        try:
-            os.rename(config.snapshots_folder, '%s_%s' % (config.global_country, config.start_datetime))
-        except:
+        c_error = False
+        if config.global_country:
+           try:
+               os.rename(config.snapshots_folder, '%s_%s' % (config.global_country, config.start_datetime))
+           except:
+               c_error = True
+        elif not config.global_country or c_error:
              os.rename(config.snapshots_folder, 'Snapshots_%s' % config.start_datetime)
 
 
