@@ -156,6 +156,9 @@ def get_options():
     count = 0
 
     if options.ports:
+        print('\nIt`s better to run with "-d" \
+flag while setting custom ports!')
+        print('That`s why this forced c;\n\n')
         config.global_ports = options.ports.split(',')
 
     if options.masscan_resume:
@@ -221,7 +224,7 @@ def get_options():
     if not options.brute_file:
         options.brute_file = config.tmp_masscan_file
     else:
-        custom_brute_file = True
+        config.custom_brute_file = True
         config.tmp_masscan_file = options.brute_file
 
     if not os.path.exists(options.brute_file) and options.brute_only:
@@ -242,7 +245,7 @@ def main():
     print(f.renderText('asleep')) #+ '\n')
     print('https://t.me/asleep_cg' + '\n')
     options = get_options()
-    if options.debug:
+    if options.debug or options.ports:
         logging.getLogger().setLevel(logging.DEBUG)
     else:
         logging.getLogger().propagate = False
