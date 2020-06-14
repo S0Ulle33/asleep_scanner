@@ -46,7 +46,7 @@ def additional_masscan_params():
 		tunnel = input('''\nPlease enter your VPN Tunnel interface
 [WARNING] Add interface to config.py to avoid manual input\n\nLeave empty if none: ''')
 	if tunnel:
-		full_masscan_params = masscan_params + " -e " + tunnel
+		full_masscan_params = masscan_params + f' -e {tunnel}'
 		return full_masscan_params
 	else:
 		return masscan_params
@@ -68,10 +68,10 @@ logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(
 logging.getLogger("requests").setLevel(logging.INFO)
 
 def update_status():
-    global index
-    global total
-    global state
-    index += 1
-    state = round(10*(index/total), 2)
+	global index
+	global total
+	global state
+	index += 1
+	state = round(10*(index/total), 2)
 
 

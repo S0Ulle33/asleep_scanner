@@ -1,5 +1,6 @@
 from colorama import init, Fore, Back
 
+init()
 
 def fore_red(msg):
 	return Fore.RED + msg + Fore.RESET

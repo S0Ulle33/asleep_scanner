@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import os
+import sys
 import time
 import logging
 import fnmatch
@@ -10,7 +11,6 @@ from pathlib import Path
 from shutil import rmtree
 from geoip import geolite2
 from collections import defaultdict
-from wrapt_timeout_decorator import *
 
 try:
     from telegram import Bot
@@ -18,7 +18,7 @@ except Exception as e:
        logging.info(e)
        print('''\nPython dependencies error:\n ~$ pip3 freeze | grep telegram
  ~$ pip3 uninstall <libs>\n ~$ pip3 install python-telegram-bot''')
-       exit(0)
+       sys.exit(0)
 
 
 class Poster(object):
@@ -99,8 +99,6 @@ class Poster(object):
 		if self.delete:
 			rmtree(self.fdir)
 
-
-	@timeout(30)
 	def post(self, ip, port, login, password, channel, model, photo):
 
 		try:
@@ -108,7 +106,7 @@ class Poster(object):
 		except TypeError:
 			print('''Python dependencies error:\n
  ~$ pip3 uninstall python-geoip python-geoip-python3\n ~$ pip3 install python-geoip-python3''')
-			exit(0)
+			sys.exit(0)
 		if self.state:
 			self.state = str(self.state.country + " - " + self.state.timezone)
 		else:
@@ -143,7 +141,7 @@ class Poster(object):
 		self.post_from(self.sort_list(self.get_data()))
 
 if __name__ == '__main__':
-	ROOM_ID = '-1001184010916'
-	TOKEN = ""
+	ROOM_ID = ''
+	TOKEN = ''
 	poster = Poster(Path(os.getcwd()), TOKEN, ROOM_ID, delete=False)
 	poster.start()

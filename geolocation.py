@@ -76,7 +76,7 @@ class IPDenyGeolocationToIP(GeolocationToIp):
                      except TypeError:
                            print('''Python dependencies error:\n
  ~$ pip3 uninstall python-geoip python-geoip-python3\n ~$ pip3 install python-geoip-python3''')
-                           exit(0)
+                           sys.exit(0)
                      try:
                          time_src = pytz.timezone(tm.timezone)
                      except Exception as e:

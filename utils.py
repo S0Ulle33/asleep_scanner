@@ -1,6 +1,7 @@
 import logging
 import random
-import re, os
+import os, sys
+import re
 
 import config
 
@@ -12,7 +13,8 @@ def masscan_parse(brute_file):
         q = False
         for line in file.readlines():
             new_ips = re.findall(r'[0-9]+(?:\.[0-9]+){3}', line)
-            if port_re := re.search(r'tcp (\d+)', line):
+            port_re = re.search(r'tcp (\d+)', line)
+            if port_re:
                 port = port_re.group(1)
             elif not port_re and config.custom_brute_file:
                port = config.global_ports
@@ -61,17 +63,17 @@ def setup_credentials(use_logopass):
             random.shuffle(config.logopasses)
         else:
             logging.error('Login/password combinations file %s not found!' % config.logopass_file)
-            exit(-2)
+            sys.exit(0)
     else:
         if os.path.exists(config.logins_file):
             config.logins = list(map(str.strip, open(config.logins_file).readlines()))
             logging.debug('Logins loaded: %s' % ", ".join(config.logins))
         else:
             logging.error('Logins file %s not found!' % config.logins_file)
-            exit(-2)
+            sys.exit(0)
         if os.path.exists(config.passwords_file):
             config.passwords = list(map(str.strip, open(config.passwords_file).readlines()))
             logging.debug('Passwords loaded: %s' % ", ".join(config.passwords))
         else:
             logging.error('Passwords file %s not found!' % config.passwords_file)
-            exit(-2)
+            sys.exit(0)
