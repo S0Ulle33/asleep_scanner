@@ -1,6 +1,10 @@
 ### Dahua DVRs bruteforcer at port 37777
 
+Author of this code **is not responsible** of any illegal actions. \
+For educational purposes only..
+
 ![Terminal record](https://github.com/d34db33f-1007/asleep_scanner/raw/master/tty.gif)
+
 
 #### Usage:
 
@@ -46,7 +50,7 @@ Options:
 to view cams in live mode use [SmartPSS](https://dahuawiki.com/SmartPSS) for win and mac or [TaniDVR](http://tanidvr.sourceforge.net/) for Linux
 
 #### Requirements:
-besides content of **requirements.txt** this code needs [**masscan**](https://github.com/robertdavidgraham/masscan) and **Python 3.7 >**
+besides content of **requirements.txt** this code needs [**masscan**](https://github.com/robertdavidgraham/masscan) and **Python 3.7 >** \
 only for windows install [**WinPcap driver**](https://www.winpcap.org/)
 
 #### Build:
@@ -62,6 +66,3 @@ all configs are well commented in .config file.
 
 code can post snapshots to your telegram channel at the end of scanning.
 add your Telegram Bot API Key and channel ID in .config file to make this work.
-
-author of this code is not responsible of any illegal actions.
-for educational purposes only ;)
