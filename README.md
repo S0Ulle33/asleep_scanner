@@ -41,6 +41,10 @@ Options:
 *  `pip3 install -r requirements.txt`
 *  `python3 asleep.py --help`
 
+##### View:
+
+to view cams in live mode use [SmartPSS](https://dahuawiki.com/SmartPSS) for win and mac or [TaniDVR](http://tanidvr.sourceforge.net/) for Linux
+
 #### Requirements:
 besides content of **requirements.txt** this code needs [**masscan**](https://github.com/robertdavidgraham/masscan) and **Python 3.7 >**
 
