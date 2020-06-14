@@ -47,6 +47,7 @@ to view cams in live mode use [SmartPSS](https://dahuawiki.com/SmartPSS) for win
 
 #### Requirements:
 besides content of **requirements.txt** this code needs [**masscan**](https://github.com/robertdavidgraham/masscan) and **Python 3.7 >**
+only for windows install [**WinPcap driver**](https://www.winpcap.org/)
 
 #### Build:
 
