@@ -52,7 +52,7 @@ def prepare_folders_and_files():
 
 def setup_credentials(use_custom_credentials):
     if use_custom_credentials:
-        if not Path(config.logins_file).exists:
+        if not Path(config.logins_file).exists():
             logging.error(f'Logins file {config.logins_file} not found!')
             sys.exit(0)
         if not Path(config.passwords_file).exists():
