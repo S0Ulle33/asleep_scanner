@@ -4,6 +4,7 @@
 import sys, random, requests
 import optparse, platform
 import subprocess
+import time
 
 from countrycode import countrycode
 from pyfiglet import Figlet
