@@ -1,11 +1,11 @@
 import logging
-import random
-import os, sys
 import re
+import sys
+from pathlib import Path
+from shutil import rmtree
 
 import config
 
-from shutil import rmtree
 
 def masscan_parse(brute_file):
     with open(brute_file, 'r') as file:
@@ -17,17 +17,18 @@ def masscan_parse(brute_file):
             if port_re:
                 port = port_re.group(1)
             elif not port_re and config.custom_brute_file:
-               port = config.global_ports
+                port = config.global_ports
             else:
-                 port = '37777'
+                port = '37777'
             for p in port:
                 for ip in new_ips:
                     if config.custom_brute_file:
-                       hosts.append([ip, p])
+                        hosts.append([ip, p])
                     else:
-                         hosts.append([ip, port])
-                         q = True
-                if q: break
+                        hosts.append([ip, port])
+                        q = True
+                if q:
+                    break
 
 #        file.seek(0)
 #        for hst in hosts:
@@ -37,43 +38,44 @@ def masscan_parse(brute_file):
 
 
 def prepare_folders_and_files():
-    reports_folder = os.path.join(config.reports_folder, config.start_datetime)
-    if not os.path.exists(config.snapshots_folder):
-        os.makedirs(config.snapshots_folder)
-    else:
-        rmtree(config.snapshots_folder)
-        os.makedirs(config.snapshots_folder)
-    os.mkdir(os.path.join(config.snapshots_folder, 'trash'))
-    os.makedirs(reports_folder)
-    results_file = os.path.join(reports_folder, config.results_file)
-    xml_file = os.path.join(reports_folder, config.xml_file)
-    if config.custom_brute_file:
-        tmp_masscan_file = os.path.join(reports_folder, config.tmp_masscan_file)
+    # Create /tmp_snapshots/ and /tmp_snapshots/trash
+    snapshots_folder = Path(config.snapshots_folder)
+    if snapshots_folder.exists():
+        rmtree(snapshots_folder)
+    snapshots_folder.mkdir()
+    Path(snapshots_folder / 'trash').mkdir()
 
-def setup_credentials(use_logopass):
-    if use_logopass:
-        if os.path.exists(config.logopass_file):
-            raw_logins = list(map(str.strip, open(config.logopass_file).readlines()))
-            for raw_login in raw_logins:
-                login = raw_login.split(':')
-                if len(login) == 2:
-                    config.logopasses.append(login)
+    # Create /reports/ and /reports/datetime
+    reports_folder = Path(config.reports_folder) / Path(config.start_datetime)
+    reports_folder.mkdir(parents=True)
 
-            logging.debug('Login/password combinations loaded: %s' % ", ".join(raw_logins))
-            random.shuffle(config.logopasses)
-        else:
-            logging.error('Login/password combinations file %s not found!' % config.logopass_file)
+
+def setup_credentials(use_custom_credentials):
+    if use_custom_credentials:
+        if not Path(config.logins_file).exists:
+            logging.error(f'Logins file {config.logins_file} not found!')
             sys.exit(0)
+        if not Path(config.passwords_file).exists():
+            logging.error(f'Passwords file {config.passwords_file} not found!')
+            sys.exit(0)
+
+        config.logins = list(map(str.strip, open(config.logins_file).readlines()))
+        config.passwords = list(map(str.strip, open(config.passwords_file).readlines()))
+
+        logging.debug(f'Logins loaded: {", ".join(config.logins)}')
+        logging.debug(f'Passwords loaded: {", ".join(config.passwords)}')
     else:
-        if os.path.exists(config.logins_file):
-            config.logins = list(map(str.strip, open(config.logins_file).readlines()))
-            logging.debug('Logins loaded: %s' % ", ".join(config.logins))
-        else:
-            logging.error('Logins file %s not found!' % config.logins_file)
+        if not Path(config.logopass_file).exists():
+            logging.error(f'Login/password combinations file {config.logopass_file} not found!')
             sys.exit(0)
-        if os.path.exists(config.passwords_file):
-            config.passwords = list(map(str.strip, open(config.passwords_file).readlines()))
-            logging.debug('Passwords loaded: %s' % ", ".join(config.passwords))
-        else:
-            logging.error('Passwords file %s not found!' % config.passwords_file)
-            sys.exit(0)
+
+        raw_creds = list(
+            map(str.strip, open(config.logopass_file).readlines()))
+        for raw_cred in raw_creds:
+            login_pass = raw_cred.split(':')
+            if len(login_pass) == 2:
+                config.logins.append(login_pass[0])
+                config.passwords.append(login_pass[1])
+
+        logging.debug(f'Logins loaded: {", ".join(config.logins)}')
+        logging.debug(f'Passwords loaded: {", ".join(config.passwords)}')

