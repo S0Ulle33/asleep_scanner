@@ -9,7 +9,7 @@ def fore_green(msg):
 	return Fore.GREEN + msg + Fore.RESET
 
 def fore_yellow(msg):
-	return Fore.YELLO + msg + Fore.RESET
+	return Fore.YELLOW + msg + Fore.RESET
 
 def fore_blue(msg):
 	return Fore.BLUE + msg + Fore.RESET
