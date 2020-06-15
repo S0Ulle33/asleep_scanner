@@ -2,7 +2,7 @@ import threading
 import logging
 import config
 
-from dahua import *
+from dahua import DahuaController
 
 
 class BruteThread(threading.Thread):
