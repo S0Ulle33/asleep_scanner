@@ -103,7 +103,7 @@ def masscan(filescan, threads, resume):
             ",".join(config.global_ports), filescan, config.tmp_masscan_file, threads, config.additional_masscan_params())
         params += ' --http-user-agent="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"'
     mmasscan_path = config.masscan_nix_path if get_os_type() == 'nix' else config.masscan_windows_path
-    binary = 'sudo ' + mmasscan_path
+    binary = 'sudo ' + mmascan_path if get_os_type() == 'nix' else mmascan_path
 
     try:
         if sys.platform.startswith('freebsd') \
