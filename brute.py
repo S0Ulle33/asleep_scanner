@@ -21,16 +21,16 @@ class BruteThread(threading.Thread):
     def dahua_login(self, server_ip, port, login, password):
         with threading.Lock():
             config.update_status()
-            logging.debug('Login attempt: {server_ip} with {login}:{password}')
+            logging.debug(f'Login attempt: {server_ip} with {login}:{password}')
         dahua = DahuaController(server_ip, port, login, password)
         if dahua.status == 0:
             logging.debug(f'Success login: {server_ip} with {login}:{password}')
             return dahua
         elif dahua.status == 2:
-            logging.debug('Blocked camera: {server_ip}:{port}')
+            logging.debug(f'Blocked camera: {server_ip}:{port}')
             return "Blocked"
         else:
-            logging.debug('Unable to login: {server_ip}:{port} with {login}:{password}')
+            logging.debug(f'Unable to login: {server_ip}:{port} with {login}:{password}')
             return None
 
     def dahua_auth(self, host):
