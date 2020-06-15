@@ -12,7 +12,6 @@ import numpy as np
 from cv2 import cvtColor, Canny
 from cv2 import COLOR_BGR2GRAY, bilateralFilter
 
-from dahua import *
 from paint import *
 import config
 
@@ -48,9 +47,9 @@ class ScreenshotThread(threading.Thread):
                 jpeg = dahua.get_snapshot(channel)
                 dead_counter = 0
                 capturing += 1
-                name =  f"{dahua.ip}_{dahua.port}_{dahua.login}_{dahua.password}_{channel + 1}_{model}.jpg"
+                name = f"{dahua.ip}_{dahua.port}_{dahua.login}_{dahua.password}_{channel + 1}_{model}.jpg"
                 grabster = channels_count - capturing
-                print(fore_green(f"Brute progress: [{config.state}] Grabbing snapshots for {dahua.ip}.. \n") #Left {str(grabster)} channels.. Trash: {str(config.trash_cam[dahua.ip])}\n")
+                print(fore_green(f"Brute progress: [{config.state}] Grabbing snapshots for {dahua.ip}.. \n")  # Left {str(grabster)} channels.. Trash: {str(config.trash_cam[dahua.ip])}\n")
                 + back_yellow(f"Writing snapshots.. Total saved {config.snapshots_counts} from {total_channels}"), end='\r')
                 sleep(0.05)
                 self.image_processing_queue.put([name, jpeg], block=False, timeout=20)
@@ -61,6 +60,7 @@ class ScreenshotThread(threading.Thread):
                 continue
         logging.debug("%s exit from make_snapshots()" % dahua.ip)
         return
+
 
 class ImageProcessingThread(threading.Thread):
     def __init__(self, image_processing_queue):
@@ -86,7 +86,7 @@ class ImageProcessingThread(threading.Thread):
         gray = cvtColor(image, COLOR_BGR2GRAY)
         gray = bilateralFilter(gray, 11, 17, 17)
         edged = Canny(gray, 30, 200)
-        if np.sum(edged[:,:]**2) < 2500:
+        if np.sum(edged[:, :]**2) < 2500:
             return False
         else:
             return True
@@ -106,10 +106,10 @@ class ImageProcessingThread(threading.Thread):
                 config.trash_cam[n_ip] = 0
                 return True
         except Exception as e:
-             config.trash_cam[n_ip] += 1
-             #print("PIL Issue: " + str(e))
-             logging.debug(f'{fore_red("Cannot save screenshot")} - {name.split("_")[0]} - {back_red("CORRUPTED FILE")}{" "*40}')
-             pass
+            config.trash_cam[n_ip] += 1
+            #print("PIL Issue: " + str(e))
+            logging.debug(f'{fore_red("Cannot save screenshot")} - {name.split("_")[0]} - {back_red("CORRUPTED FILE")}{" "*40}')
+            pass
 
     def save_image(self, name, image_bytes):
         n_name = name.split("_")
