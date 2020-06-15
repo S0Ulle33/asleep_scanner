@@ -35,7 +35,7 @@ def process_cameras():
     brute_file = config.tmp_masscan_file
     hosts = masscan_parse(brute_file)
     ip_count = len(hosts)
-    logging.info("Parsed %s IPs from Masscan output" % ip_count)
+    logging.info(f"Parsed {ip_count} IPs from Masscan output")
 
     if not hosts:
         return False
@@ -45,7 +45,7 @@ def process_cameras():
     with open(full_ips_list, 'w') as file:
         for host in hosts:
             file.write(host[0] + ":" + host[1] + "\n")
-    logging.info('IPs saved to %s' % full_ips_list)
+    logging.info(f'IPs saved to {full_ips_list}')
 
 
 
@@ -90,15 +90,15 @@ def process_cameras():
 
 
 
-    logging.info('Results: %s devices found, %s bruted' % (len(hosts), len(config.working_hosts)))
-    logging.info('Made total %s snapshots' % (config.snapshots_counts))
+    logging.info(f'Results: {len(hosts)} devices found, {len(config.working_hosts)} bruted')
+    logging.info(f'Made total {config.snapshots_counts} snapshots')
 
 
 def masscan(filescan, threads, resume):
-    logging.info('Starting scan with masscan on ports %s' % ", ".join(config.global_ports))
+    logging.info(f'Starting scan with masscan on ports {", ".join(config.global_ports)}')
     if resume:
         logging.info('Continue last scan from paused.conf')
-        params = ' --resume paused.conf %s' % config.additional_masscan_params()
+        params = ' --resume paused.conf {config.additional_masscan_params()}'
     else:
         params = ' -p %s -iL %s -oL %s --rate=%s %s' % (
             ",".join(config.global_ports), filescan, config.tmp_masscan_file, threads, config.additional_masscan_params())
@@ -260,7 +260,7 @@ def main():
         logging.getLogger().setLevel(logging.DEBUG)
     else:
         logging.getLogger().propagate = False
-    setup_credentials(not options.logins_passes)
+    setup_credentials(options.logins_passes)
     prepare_folders_and_files()
     if not options.brute_only:
         masscan(options.scan_file, options.threads, options.masscan_resume)
