@@ -4,7 +4,6 @@ import time
 
 logins = []
 passwords = []
-logopasses = []
 top_logopass = {}
 working_hosts = []
 random_countries = []

