@@ -43,6 +43,10 @@ def process_cameras():
 
     if not hosts:
         return False
+    if ip_count < config.default_brute_threads:
+        config.default_brute_threads = ip_count
+        config.default_snap_threads = max(1, ip_count - 20)
+        config.default_image_threads = max(1, ip_count - 100)
 
     ips_list_file = config.ips_file % config.start_datetime
     full_ips_list = Path(config.reports_folder) / ips_list_file
@@ -249,8 +253,8 @@ flag while setting custom ports!')
 def main():
     get_os_type()
     f = Figlet(font='slant')
-    print(f.renderText('asleep')) #+ '\n')
-    print('https://t.me/asleep_cg' + '\n')
+    print(f.renderText('asleep'))
+    print('https://t.me/asleep_cg\n')
     options = get_options()
     if options.debug or options.ports:
         config.logging.getLogger().setLevel(config.logging.DEBUG)
