@@ -133,6 +133,8 @@ class DahuaController:
         i = 0
         while True: # i != 30
             buf = self._socket.recv(1460)
+            if not buf:
+                break
             if i == 0:
                 buf = buf[32:]
             data += buf
