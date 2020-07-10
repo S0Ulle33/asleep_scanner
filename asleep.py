@@ -4,7 +4,6 @@ import optparse
 import os
 import platform
 import random
-import requests
 import subprocess
 import sys
 import time
@@ -21,16 +20,7 @@ import utils
 from bot import Poster
 from brute import BruteThread
 from geolocation import IPDenyGeolocationToIP
-from snapshot import ScreenshotThread, ImageProcessingThread
-
-
-def get_os_type():
-    if platform.system() == "Windows":
-        init()
-        return 'win'
-    else:
-        return 'nix'
-
+from snapshot import ScreenshotThread
 
 # TODO: make bruteforce core function
 # TODO: rewrite with importlib, python-netsurv, git://dhondta/sploitkit
@@ -60,7 +50,6 @@ def process_cameras():
     try:
         brute_queue = Queue()
         screenshot_queue = Queue()
-        image_processing_queue = Queue()
 
         for _ in range(config.default_brute_threads):
             brute_worker = BruteThread(brute_queue, screenshot_queue)
@@ -68,23 +57,16 @@ def process_cameras():
             brute_worker.start()
 
         for _ in range(config.default_snap_threads):
-            screenshot_worker = ScreenshotThread(screenshot_queue, image_processing_queue)
+            screenshot_worker = ScreenshotThread(screenshot_queue)
             screenshot_worker.daemon = True
             screenshot_worker.start()
 
-        for _ in range(config.default_image_threads):
-            image_processing_worker = ImageProcessingThread(image_processing_queue)
-            image_processing_worker.daemon = True
-            image_processing_worker.start()
-
-
+        config.logging.info(f'Starting to brute total {len(hosts)} devices\n')
         for host in hosts:
-            brute_queue.put(host, block=False, timeout=25)
-        print(f'\nStarting to brute total {str(brute_queue.qsize())} devices\n')
+            brute_queue.put(host)
 
         brute_queue.join()
         screenshot_queue.join()
-        image_processing_queue.join()
         # raise exception here
         print('\n')
 
@@ -106,8 +88,12 @@ def masscan(filescan, threads, resume):
         params = ' -p %s -iL %s -oL %s --rate=%s %s' % (
             ",".join(config.global_ports), filescan, config.tmp_masscan_file, threads, config.additional_masscan_params())
         params += ' --http-user-agent="Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"'
-    mmasscan_path = config.masscan_nix_path if get_os_type() == 'nix' else config.masscan_windows_path
-    binary = 'sudo ' + mmasscan_path if get_os_type() == 'nix' else mmasscan_path
+    if platform.system() == 'Windows':
+        mmasscan_path = config.masscan_windows_path
+        binary = mmasscan_path
+    else:
+       mmasscan_path = config.masscan_nix_path
+       binary = f'sudo {mmasscan_path}'
 
     try:
         if platform.system() == 'Windows':
@@ -166,9 +152,9 @@ def get_options():
     count = 0
 
     if options.ports:
-        print('\nIt`s better to run with "-d" \
-flag while setting custom ports!')
-        print('That`s why this forced c;\n\n')
+        print('It`s better to run with "-d" flag while setting custom ports!')
+        print('That`s why this forced c;\n')
+        options.debug = True
         config.global_ports = options.ports.split(',')
 
     if options.masscan_resume:
@@ -251,12 +237,12 @@ flag while setting custom ports!')
 
 
 def main():
-    get_os_type()
-    f = Figlet(font='slant')
-    print(f.renderText('asleep'))
+    init()
+    print(Figlet(font='slant').renderText('asleep'))
     print('https://t.me/asleep_cg\n')
+
     options = get_options()
-    if options.debug or options.ports:
+    if options.debug:
         config.logging.getLogger().setLevel(config.logging.DEBUG)
     else:
         config.logging.getLogger().propagate = False

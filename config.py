@@ -10,7 +10,6 @@ random_countries = []
 snapshots_counts = 0
 custom_brute_file = False
 snapshots_enabled = True
-trash_cam = {}
 ch_count = 0
 max_ips = 0
 index = 0

