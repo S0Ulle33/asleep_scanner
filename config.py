@@ -2,8 +2,7 @@ import logging
 import time
 
 
-logins = []
-passwords = []
+combinations = []
 top_logopass = {}
 working_hosts = []
 random_countries = []

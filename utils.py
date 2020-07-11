@@ -1,4 +1,5 @@
 import logging
+import random
 import re
 import sys
 from pathlib import Path
@@ -59,23 +60,23 @@ def setup_credentials(use_custom_credentials):
             logging.error(f'Passwords file {config.passwords_file} not found!')
             sys.exit(0)
 
-        config.logins = list(map(str.strip, open(config.logins_file).readlines()))
-        config.passwords = list(map(str.strip, open(config.passwords_file).readlines()))
+        logins = list(map(str.strip, open(config.logins_file).readlines()))
+        passwords = list(map(str.strip, open(config.passwords_file).readlines()))
 
-        logging.debug(f'Logins loaded: {", ".join(config.logins)}')
-        logging.debug(f'Passwords loaded: {", ".join(config.passwords)}')
+        config.combinations = [(login, password) for login in logins for password in passwords]
+
+        logging.debug(f'Logins loaded: {", ".join(logins)}')
+        logging.debug(f'Passwords loaded: {", ".join(passwords)}')
     else:
         if not Path(config.logopass_file).exists():
             logging.error(f'Login/password combinations file {config.logopass_file} not found!')
             sys.exit(0)
 
-        raw_creds = list(
-            map(str.strip, open(config.logopass_file).readlines()))
+        raw_creds = list(map(str.strip, open(config.logopass_file).readlines()))
         for raw_cred in raw_creds:
             login_pass = raw_cred.split(':')
             if len(login_pass) == 2:
-                config.logins.append(login_pass[0])
-                config.passwords.append(login_pass[1])
+                config.combinations.append((login_pass[0], login_pass[1]))
+        random.shuffle(config.combinations)
 
-        logging.debug(f'Logins loaded: {", ".join(config.logins)}')
-        logging.debug(f'Passwords loaded: {", ".join(config.passwords)}')
+        logging.debug(f'Login/password combinations loaded: {", ".join(raw_creds)}')
