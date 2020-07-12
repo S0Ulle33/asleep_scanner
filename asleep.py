@@ -36,7 +36,6 @@ def process_cameras():
     if ip_count < config.default_brute_threads:
         config.default_brute_threads = ip_count
         config.default_snap_threads = max(1, ip_count - 20)
-        config.default_image_threads = max(1, ip_count - 100)
 
     ips_list_file = config.ips_file % config.start_datetime
     full_ips_list = Path(config.reports_folder) / ips_list_file
