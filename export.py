@@ -1,10 +1,10 @@
-import logging
 import imp
+import logging
 import os
+import xml.etree.ElementTree as ElTree
 
 import config
 
-import xml.etree.ElementTree as ElTree
 
 def save_xml(results):
     host_parts = []

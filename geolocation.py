@@ -1,13 +1,16 @@
-import requests, random, sys
 import ipaddress
 import logging
+import random
+import sys
+from datetime import datetime
+
 import pytz
+import requests
+from countrycode import countrycode
+from geoip import geolite2
 
 import config
 
-from countrycode import countrycode
-from datetime import datetime
-from geoip import geolite2
 
 class GeolocationToIp():
     def __init__(self, country, city='', lat='', lng=''):

@@ -1,6 +1,6 @@
 import logging
-import threading
 import socket
+import threading
 
 import config
 from dahua import DahuaController, Status

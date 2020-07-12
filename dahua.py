@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
+import logging
 import re
 import socket
 import struct
 import time
-import logging
 from enum import Enum
+
 #import telegram
 
 #from wrapt_timeout_decorator import *
@@ -156,4 +157,3 @@ class DahuaController:
             trash = data[t_start:t_end]
             data = data.replace(trash, b'')
         return data
-

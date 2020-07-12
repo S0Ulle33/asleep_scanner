@@ -1,19 +1,19 @@
 # -*- coding:utf-8 -*-
-import threading
-import queue
-import logging
-import sys
 import io
+import logging
+import queue
+import sys
+import threading
 from pathlib import PurePath
-
 from time import sleep
-from PIL import Image
-import numpy as np
-from cv2 import cvtColor, Canny
-from cv2 import COLOR_BGR2GRAY, bilateralFilter
 
-from paint import *
+import numpy as np
+from cv2 import COLOR_BGR2GRAY, Canny, bilateralFilter, cvtColor
+from PIL import Image
+
 import config
+from paint import *
+
 
 class ScreenshotThread(threading.Thread):
     def __init__(self, screenshot_queue):

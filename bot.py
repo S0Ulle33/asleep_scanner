@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
+import fnmatch
+import logging
 import os
 import sys
 import time
-import logging
-import fnmatch
-import telegram
+from collections import defaultdict
 from pathlib import Path
 from shutil import rmtree
+
+import telegram
 from geoip import geolite2
-from collections import defaultdict
 
 try:
     from telegram import Bot
