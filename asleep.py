@@ -127,7 +127,7 @@ def get_options():
                       help='Run Masscan and brute it results')
     parser.add_option('--masscan-resume', dest='masscan_resume', action="store_true", default=False,
                       help='Continue paused Masscan scan')
-    parser.add_option('--no-snapshots', dest='snapshots', action="store_false", default=True,
+    parser.add_option('--no-snapshots', dest='snapshots_enabled', action="store_false", default=True,
                       help='Do not make snapshots')
     parser.add_option('--no-xml', dest='no_xml', action="store_true", default=False,
                       help='Do not make SMART PSS xml files')
@@ -149,6 +149,8 @@ def get_options():
     country = ''
     city = ''
     count = 0
+    
+    config.snapshots_enabled = options.snapshots_enabled
 
     if options.ports:
         print('It`s better to run with "-d" flag while setting custom ports!')

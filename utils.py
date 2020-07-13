@@ -39,12 +39,13 @@ def masscan_parse(brute_file):
 
 
 def prepare_folders_and_files():
-    # Create /tmp_snapshots/ and /tmp_snapshots/trash
-    snapshots_folder = Path(config.snapshots_folder)
-    if snapshots_folder.exists():
-        rmtree(snapshots_folder)
-    snapshots_folder.mkdir()
-    Path(snapshots_folder / 'trash').mkdir()
+    if config.snapshots_enabled:
+        # Create /tmp_snapshots/ and /tmp_snapshots/trash
+        snapshots_folder = Path(config.snapshots_folder)
+        if snapshots_folder.exists():
+            rmtree(snapshots_folder)
+        snapshots_folder.mkdir()
+        Path(snapshots_folder / 'trash').mkdir()
 
     # Create /reports/ and /reports/datetime
     reports_folder = Path(config.reports_folder) / Path(config.start_datetime)
