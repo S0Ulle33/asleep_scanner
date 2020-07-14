@@ -24,8 +24,7 @@ class ScreenshotThread(threading.Thread):
 
     def run(self):
         while True:
-            with threading.Lock():
-                dahua = self.screenshot_queue.get()
+            dahua = self.screenshot_queue.get()
             if config.snapshots_enabled:
                 self.make_snapshots(dahua)
             self.screenshot_queue.task_done()

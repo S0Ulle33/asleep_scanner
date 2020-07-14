@@ -14,8 +14,7 @@ class BruteThread(threading.Thread):
 
     def run(self):
         while True:
-            with threading.Lock():
-                host = self.brute_queue.get()
+            host = self.brute_queue.get()
             self.dahua_auth(host)
             self.brute_queue.task_done()
 
