@@ -1,53 +1,55 @@
 ### Dahua DVRs bruteforcer at port 37777
 
-Author of this code **is not responsible** of any illegal actions. \
+The author of this code **is not responsible** for any illegal actions. \
 For educational purposes only..
 
 ![Terminal record](https://github.com/d34db33f-1007/asleep_scanner/raw/master/tty.gif)
 
+#### Download
 
-#### Usage:
-
-1. get ur binary from [**releases**](https://github.com/d34db33f-1007/asleep_scanner/releases) page
-   1.  `./asleep_xN --help`
+Binary available on the [**releases**](https://github.com/d34db33f-1007/asleep_scanner/releases) page
 
 ```
-Options:
-  -h, --help            show this help message and exit
-  -s SCAN_FILE          IP ranges list file to scan. Example:
-                        192.168.1.1-192.168.11.1
-  -b BRUTE_FILE         IPs list file to brute, in any format
-  -m, --masscan         Run Masscan and brute it results
-  --masscan-resume      Continue paused Masscan scan
-  --no-snapshots        Do not make snapshots
-  --no-xml              Do not make SMART PSS xml files
-  -t THREADS            Threads number for Masscan. Default 3000
-  --dead                Write not bruted cams to file
-  -d                    Debug output
-  --country             Scan by country
-  --random-country      Scan by random country
-  -l                    Brute combinations from logins.txt and passwords.txt
-                        instead of combinations.txt
-  -p PORTS, --ports=PORTS
-                        Ports to scan, 37777 by default. Example: 37777,37778
-                        
-  `Example: [./asleep -b ips.txt] To brute hosts from list. 
-            [./asleep -m -s ips.txt] To scan and brute hosts from list.
-            [./asleep -m -s ips.txt -p 37777,37778,47777]
-            [./asleep --random-country] To scan and brute random country
-            [./asleep --country]
+USAGE
+   $ asleep.py [-h] [-s SCAN_FILE] [-p PORTS] [-b BRUTE_FILE] [-l] [-m] [-t THREADS] [-d]
+               [--masscan-resume] [--no-snapshots] [--no-xml] [--dead] [--country] [--random-country]
+
+ARGUMENTS
+   -h, --help        show this help message and exit
+   -s SCAN_FILE      file with IP ranges to scan, e.g. 192.168.1.1-192.168.11.1
+   -p PORTS          ports to scan (default: 37777), e.g. 37777,37778
+   -b BRUTE_FILE     file with IPs to brute, in any format
+   -l                brute combinations from logins.txt and passwords.txt instead of combinations.txt
+   -m, --masscan     run Masscan and brute the results
+   -t THREADS        number of thread for Masscan (default: 3000)
+   --masscan-resume  continue paused Masscan
+   --no-snapshots    don't make snapshots
+   --no-xml          don't make SMART PSS .xml files
+   --dead            write not bruted cams to dead_cams.txt file
+   --country         scan by country
+   --random-country  scan by random country
+   -d, --debug       debug output
+
+EXAMPLES
+   $ ./asleep -m -s ips.txt
+   $ ./asleep -m -s ips.txt -p 37777,37778,47777
+   $ ./asleep --country
+   $ ./asleep --random-country
+   $ ./asleep -b ips.txt
 ```
             
-
 ##### Interactive:
 
-*  `git clone https://github.com/d34db33f-1007/asleep_scanner.git`
-*  `pip3 install -r requirements.txt`
-*  `python3 asleep.py --help`
+* `git clone https://github.com/d34db33f-1007/asleep_scanner.git`
+* `pip3 install -r requirements.txt`
+* `python3 asleep.py --help`
 
-##### View:
+##### View cams in live:
 
-to view cams in live mode use [SmartPSS](https://dahuawiki.com/SmartPSS) for win and mac or [TaniDVR](http://tanidvr.sourceforge.net/) for Linux
+* Windows / macOS
+  * [SmartPSS](https://dahuawiki.com/SmartPSS)
+* Linux
+  * [TaniDVR](http://tanidvr.sourceforge.net/)
 
 #### Requirements:
 besides content of **requirements.txt** this code needs [**masscan**](https://github.com/robertdavidgraham/masscan) and **Python 3.7 >** \
