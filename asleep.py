@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
-import optparse
+import argparse
 import os
 import platform
 import random
@@ -118,51 +118,57 @@ def masscan(filescan, threads, resume):
         sys.exit(0)
 
 
-def get_options():
-    parser = optparse.OptionParser('%prog' + " [-s <scan file>] [-b <brute file>] -t <threads>")
-    parser.add_option('-s', dest='scan_file', type='string',
-                      help='IP ranges list file to scan. Example: 192.168.1.1-192.168.11.1')
-    parser.add_option('-b', dest='brute_file', type='string', help='IPs list file to brute, in any format')
-    parser.add_option('-m', '--masscan', dest='brute_only', action="store_false", default=True,
-                      help='Run Masscan and brute it results')
-    parser.add_option('--masscan-resume', dest='masscan_resume', action="store_true", default=False,
-                      help='Continue paused Masscan scan')
-    parser.add_option('--no-snapshots', dest='snapshots_enabled', action="store_false", default=True,
-                      help='Do not make snapshots')
-    parser.add_option('--no-xml', dest='no_xml', action="store_true", default=False,
-                      help='Do not make SMART PSS xml files')
-    parser.add_option('-t', dest='threads', default=str(config.default_masscan_threads), type='string',
-                      help='Threads number for Masscan. Default %s' % config.default_masscan_threads)
-    parser.add_option('--dead', dest='dead_cams', action='store_true', default=False,
-                      help='Write not bruted cams to file')
-    parser.add_option('-d', dest='debug', action='store_true', default=False, help='Debug output')
-    parser.add_option('--country', dest='country', action='store_true', default=False, help='Scan by country')
-    parser.add_option('--random-country', dest='random_country', action='store_true', default=False,
-                      help='Scan by random country')
-    parser.add_option('-l', dest='logins_passes', action='store_true', default=False,
-                      help='Brute combinations from %s and %s instead of %s' % (
-                      config.logins_file, config.passwords_file, config.logopass_file))
-    parser.add_option('-p', '--ports', dest='ports', type='string',
-                      help='Ports to scan, 37777 by default. Example: 37777,37778')
-    (options, _) = parser.parse_args()
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', dest='scan_file',
+                        help='file with IP ranges to scan, e.g. 192.168.1.1-192.168.11.1')
+    parser.add_argument('-p', dest='ports',
+                        help='ports to scan (default: 37777), e.g. 37777,37778')                    
+    parser.add_argument('-b', dest='brute_file',
+                        help='file with IPs to brute, in any format')
+    parser.add_argument('-l', dest='use_custom_credentials', action='store_true', default=False,
+                        help=f'brute combinations from {config.logins_file} and {config.passwords_file} instead of {config.logopass_file}')                  
+    parser.add_argument('-m', '--masscan', dest='brute_only', action="store_false", default=True,
+                        help='run Masscan and brute the results')
+    parser.add_argument('-t', dest='threads', default=str(config.default_masscan_threads),
+                        help=f'number of thread for Masscan (default: %(default)s)')
+    parser.add_argument('--masscan-resume', dest='masscan_resume', action="store_true", default=False,
+                        help='continue paused Masscan')
+    parser.add_argument('--no-snapshots', dest='snapshots_enabled', action="store_false", default=True,
+                        help='don\'t make snapshots')
+    parser.add_argument('--no-xml', dest='no_xml', action="store_true", default=False,
+                        help='don\'t make SMART PSS .xml files')
+    parser.add_argument('--dead', dest='dead_cams', action='store_true', default=False,
+                        help='write not bruted cams to dead_cams.txt file')
+    parser.add_argument('--country', dest='country',
+                        action='store_true', default=False, help='scan by country')
+    parser.add_argument('--random-country', dest='random_country', action='store_true', default=False,
+                        help='scan by random country')
+    parser.add_argument('-d', '--debug', dest='debug',
+                        action='store_true', default=False, help='debug output')
+
+    if len(sys.argv) < 2:
+        parser.print_help()
+        sys.exit()                 
+    args = parser.parse_args()
 
     country = ''
     city = ''
     count = 0
     
-    config.snapshots_enabled = options.snapshots_enabled
+    config.snapshots_enabled = args.snapshots_enabled
 
-    if options.ports:
+    if args.ports:
         print('It`s better to run with "-d" flag while setting custom ports!')
         print('That`s why this forced c;\n')
-        options.debug = True
-        config.global_ports = options.ports.split(',')
+        args.debug = True
+        config.global_ports = args.ports.split(',')
 
-    if options.masscan_resume:
-        options.brute_only = False
+    if args.masscan_resume:
+        args.brute_only = False
 
-    if options.random_country:
-        options.brute_only = False
+    if args.random_country:
+        args.brute_only = False
         count = 600000
         total_count = 0
         total_range = []
@@ -192,10 +198,10 @@ def get_options():
              file = open(config.tmp_masscan_file, 'w')
              file.write("\n".join(total_range))
              file.close()
-             options.scan_file = config.tmp_masscan_file
+             args.scan_file = config.tmp_masscan_file
 
-    if options.country:
-        options.brute_only = False
+    if args.country:
+        args.brute_only = False
         country = input('Enter country name (defaut random): ')
         if not country:
             country = random.choice(countrycode.data['country_name'])
@@ -216,25 +222,25 @@ def get_options():
         file.write("\n".join(range_list))
         file.close()
 
-        options.scan_file = config.tmp_masscan_file
+        args.scan_file = config.tmp_masscan_file
 
-    if not options.brute_file:
-        options.brute_file = config.tmp_masscan_file
+    if not args.brute_file:
+        args.brute_file = config.tmp_masscan_file
     else:
         config.custom_brute_file = True
-        config.tmp_masscan_file = options.brute_file
+        config.tmp_masscan_file = args.brute_file
 
-    if not Path(options.brute_file).exists() and options.brute_only:
+    if not Path(args.brute_file).exists() and args.brute_only:
         config.logging.error('File with IPs %s not found. Specify it with -b option or run without brute-only option'
-                      % config.tmp_masscan_file)
+                             % config.tmp_masscan_file)
         sys.exit(0)
 
-    if not options.scan_file and not options.brute_only and not options.masscan_resume:
+    if not args.scan_file and not args.brute_only and not args.masscan_resume:
         config.logging.error("No target file scan list")
         parser.print_help()
         sys.exit(0)
 
-    return options
+    return args
 
 
 def main():
@@ -242,20 +248,20 @@ def main():
     print(Figlet(font='slant').renderText('asleep'))
     print('https://t.me/asleep_cg\n')
 
-    options = get_options()
-    if options.debug:
+    args = get_args()
+    if args.debug:
         config.logging.getLogger().setLevel(config.logging.DEBUG)
     else:
         config.logging.getLogger().propagate = False
-    utils.setup_credentials(options.logins_passes)
+    utils.setup_credentials(args.use_custom_credentials)
     utils.prepare_folders_and_files()
-    if not options.brute_only:
-        masscan(options.scan_file, options.threads, options.masscan_resume)
+    if not args.brute_only:
+        masscan(args.scan_file, args.threads, args.masscan_resume)
     process_cameras()
-    if not options.no_xml and len(config.working_hosts) > 0:
+    if not args.no_xml and len(config.working_hosts) > 0:
         export.save_xml(config.working_hosts)
     export.save_csv()
-    if options.dead_cams:
+    if args.dead_cams:
         hosts = utils.masscan_parse(config.tmp_masscan_file)
         export.dead_cams(hosts)
 
