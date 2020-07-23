@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
+import logging
 import re
 import socket
 import struct
 import time
-import logging
 from enum import Enum
+
 #import telegram
 
 #from wrapt_timeout_decorator import *
@@ -37,17 +38,20 @@ class Status(Enum):
     NONE = -1
 
 class DahuaController:
-    def __init__(self, ip=None, port=None):
+    __slots__ = ('model', 'ip', 'port', 'login', 'password', 'channels_count', 'status', 'sound', '_socket')
+    def __init__(self, ip=None, port=None, login=None, password=None):
         self.model = ''
         self.ip = ip
         self.port = port
-        self.login = None
-        self.password = None
+        self.login = login
+        self.password = password
         self.channels_count = -1
         self.status = Status.NONE
+        self.sound = None
 
         self._socket = None
-        
+        if (ip and port) and (login and password):
+            self.auth(login, password)
 
     def auth(self, login, password):
         self._socket = socket.create_connection((self.ip, self.port), TIMEOUT)
@@ -133,6 +137,8 @@ class DahuaController:
         i = 0
         while True: # i != 30
             buf = self._socket.recv(1460)
+            if not buf:
+                break
             if i == 0:
                 buf = buf[32:]
             data += buf
@@ -151,4 +157,3 @@ class DahuaController:
             trash = data[t_start:t_end]
             data = data.replace(trash, b'')
         return data
-

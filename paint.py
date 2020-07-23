@@ -1,4 +1,4 @@
-from colorama import init, Fore, Back
+from colorama import Back, Fore, init
 
 init()
 
