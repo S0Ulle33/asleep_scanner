@@ -9,25 +9,25 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from shutil import rmtree
-
-import telegram
 from geoip import geolite2
 
 try:
-    from telegram import Bot
+    import telegram
 except Exception as e:
        logging.info(e)
        print('''\nPython dependencies error:\n ~$ pip3 freeze | grep telegram
  ~$ pip3 uninstall <libs>\n ~$ pip3 install python-telegram-bot''')
        sys.exit(0)
 
+from telegram.constants import ParseMode
+import asyncio
 
 class Poster(object):
 
 	def __init__(self, fdir, token, room_id, delete=False):
 		logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 		self.fdir = Path(fdir)
-		self.bot = telegram.Bot(token=token, request=telegram.utils.request.Request(connect_timeout=20, read_timeout=20))
+		self.bot = telegram.Bot(token=token)
 		self.room_id = room_id
 #		self.gl = geolite2.lookup()
 		self.delete = delete
@@ -120,7 +120,7 @@ class Poster(object):
 			try:
 				logging.info("Trying to send post...")
 				with open(photo, 'rb') as f:
-					self.sent = self.bot.send_photo(chat_id=self.room_id, photo=f, caption=self.text, parse_mode=telegram.ParseMode.MARKDOWN, timeout=120)
+					self.sent = asyncio.run(self.bot.send_photo(chat_id=self.room_id, photo=f, caption=self.text, parse_mode=ParseMode.MARKDOWN))
 				logging.info("Sent.")
 			except Exception as e:
 				if retry_c > 4:
