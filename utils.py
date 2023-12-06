@@ -21,15 +21,12 @@ def masscan_parse(brute_file):
                 port = config.global_ports
             else:
                 port = '37777'
-            for p in port:
-                for ip in new_ips:
-                    if config.custom_brute_file:
-                        hosts.append([ip, p])
-                    else:
-                        hosts.append([ip, port])
-                        q = True
-                if q:
-                    break
+            for ip in new_ips:
+                hosts.append([ip, port])
+                if not config.custom_brute_file:
+                    q = True
+            if q:
+                break
 
 #        file.seek(0)
 #        for hst in hosts:
