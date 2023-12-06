@@ -16,15 +16,15 @@ def masscan_parse(brute_file):
             new_ips = re.findall(r'[0-9]+(?:\.[0-9]+){3}', line)
             port_re = re.search(r'tcp (\d+)', line)
             if port_re:
-                port = port_re.group(1)
+                ports = [port_re.group(1)]
             elif not port_re and config.custom_brute_file:
-                port = config.global_ports
+                ports = config.global_ports
             else:
-                port = '37777'
-            for p in port:
+                ports = ['37777']
+            for port in ports:
                 for ip in new_ips:
                     if config.custom_brute_file:
-                        hosts.append([ip, p])
+                        hosts.append([ip, port])
                     else:
                         hosts.append([ip, port])
                         q = True
